@@ -1,0 +1,144 @@
+﻿Task_1
+
+CUSTOMER  --- PURCHASE (Customer_key) (1..n)
+PURCHASE  --- PRODUCT (PRODUCT_KEY)  (n..1)
+PRODUCT   --- PRODUCT_CATEGORY (CATEGORY_KEY) (n .. 1)
+
+
+--------------------------------------------------------------------------------------------------------------
+
+Task_2_a
+
+select 
+ MEAN(AGE)
+
+from CUSTOMER
+where customer_key in (
+			select 
+			  customer_key 
+ 			from PURCHASE
+			where strftime('%Y', Date) = 2018 and product_key in (
+ 
+										select 
+										product_key
+										from PRODUCT 
+										where Name = "плюшевый мишка"
+									       )
+
+
+
+
+			);
+
+
+
+--------------------------------------------------------------------------------------------------------------
+Task_2_b
+
+create view Mishka as
+select FIO
+from CUSTOMER
+where customer_key in (
+			select 
+			  customer_key 
+ 			from PURCHASE
+			where strftime('%Y', Date) = 2019 and strftime('%m', Date) = 4 and  product_key in (
+ 
+										                                select 
+														product_key
+														from PRODUCT 
+														where Name = "плюшевый мишка"
+									       )
+
+
+
+
+			);
+
+
+create view LEGO as
+select FIO
+from CUSTOMER
+where customer_key in (
+			select 
+			  customer_key 
+ 			from PURCHASE
+			where strftime('%Y', Date) = 2019 and strftime('%m', Date) = 4 and  product_key in (
+ 
+										                                select 
+														product_key
+														from PRODUCT 
+														where Name = "LEGO"
+									       )
+
+
+
+
+			);
+
+
+
+select 
+ *
+from Mishka t1 inner join LEGO t2  on t1.FIO = t2.FIO;
+
+
+--------------------------------------------------------------------------------------------------------------
+
+Task_2_c
+
+create view v1 as 
+select 
+	product_key,
+	strftime('%m', DATE) as month,
+	QTY
+	from PURCHASE 
+	where strftime('%Y', DATE) = 2018  and
+	product_key in (select 
+				product_key 
+				from product 
+				where category_key in ( select category_key where category = "Игрушки" ));
+
+
+create view v2 as
+select 
+	product_key,
+	month,
+	sum(QTY) as NB
+	from v1
+	group by product_key, month;
+
+create view v3 as
+select
+ 	product_key,
+	month,
+	NB,
+	row_number() over (partition by month order by NB desc) as rank
+from v2;
+
+
+select 
+	month,
+	product_key,
+	rank
+from v3 
+where rank in(1,2,3);
+	
+
+--------------------------------------------------------------------------------------------------------------
+Task_2_d
+
+
+create view v1 as 
+select	
+	sum((t2.price * t1.QTY))  as t_price ,
+	t3.FIO
+from PURCHASE t1 inner join PRODUCT t2 on t1.product_key = t2.product_key inner join CUSTOMER t3 on t1.customer_key = t3.customer_key
+where (strftime("%d", t1.Date) between 1 and 11) and (strftime("%Y", t1.Date) = 2020) and (strftime("%m", t1.Date) = 5)
+group by t3.FIO;
+
+
+select 
+	FIO
+from v1
+where t_price >30000;
